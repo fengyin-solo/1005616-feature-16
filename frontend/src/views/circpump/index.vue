@@ -63,6 +63,38 @@
       </tbody>
     </table>
 
+    <h3 class="section-title">补水定压待核查清单</h3>
+    <p class="page-desc">补水定压侧标记「参数异常」的班次报送会回写到这里，循环泵值班人据此核查补水定压系统。</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>回写时间</th>
+          <th>补水记录编号</th>
+          <th>换热站</th>
+          <th>班次</th>
+          <th>补水时间</th>
+          <th>定压值</th>
+          <th>水质硬度</th>
+          <th>异常说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in reviews" :key="item.id">
+          <td>{{ item.回写时间 }}</td>
+          <td>{{ item.记录编号 }}</td>
+          <td>{{ item.换热站 }}</td>
+          <td>{{ item.班次 }}</td>
+          <td>{{ item.补水时间 }}</td>
+          <td>{{ item.定压值.toFixed(2) }} MPa</td>
+          <td>{{ item.水质硬度 }} mmol/L</td>
+          <td>{{ item.异常说明 }}</td>
+        </tr>
+        <tr v-if="!reviews.length">
+          <td colspan="8" class="empty-state">暂无补水定压参数异常的待核查条目</td>
+        </tr>
+      </tbody>
+    </table>
+
     <footer class="page-foot">
       <span>共 {{ total }} 条循环泵运维记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
@@ -79,7 +111,8 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
-import type { EntryRow } from '@/data/types'
+import { pumpReviewItems } from '@/api/makeupwater'
+import type { EntryRow, PumpReviewItem } from '@/data/types'
 
 const meta = moduleMeta('circpump')
 const columns = ["泵编号", "所属换热站", "泵型号", "运行电流", "扬程", "保养周期", "上次保养日", "运行状态"]
@@ -88,6 +121,7 @@ const statuses = ["待保养", "运行中", "已保养", "已停用"]
 const stats = [{"label": "运行中循环泵", "value": 0}, {"label": "待保养循环泵", "value": 0}, {"label": "本月保养数", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
+const reviews = ref<PumpReviewItem[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
@@ -128,6 +162,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    reviews.value = pumpReviewItems()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '循环泵运维列表读取失败'
   }
